@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic Tac Toe</title>
+    <h4>Assignment 2 - CSI3140</h4>
+    <link rel="stylesheet" href="A2.css">
+</head>
+<body>
+    <header>
+        <h1>Tic Tac Toe</h1>
+        <img src="./images/tictactoe.jpg" alt="a logo">
+    </header>
+    
+    <div class="player-info">
+        <div>
+            <label for="playerXName" >Player X: </label>
+            <input type="text"  id="playerXName" value="Player X" readonly>
+            <button id="playerXButton" onclick="editName('X')" >Edit</button>
+        </div>
+        <div>
+            <label for="playerOName">Player O: </label>
+            <input type="text" id="playerOName" value="Player O" readonly>
+            <button id="playerOButton" onclick="editName('O')" >Edit</button>
+        </div>
+    </div>
+
+    <div class="game-board">
+        <div class="cell" data-index="0"></div>
+        <div class="cell" data-index="1"></div>
+        <div class="cell" data-index="2"></div>
+        <div class="cell" data-index="3"></div>
+        <div class="cell" data-index="4"></div>
+        <div class="cell" data-index="5"></div>
+        <div class="cell" data-index="6"></div>
+        <div class="cell" data-index="7"></div>
+        <div class="cell" data-index="8"></div>
+    </div>
+    <div class="game-info">
+        <p class="status"></p>
+        <button id="resetButton">Reset Game</button>
+    </div>
+    <script src="A2.js"></script>
+</body>
+</html>
