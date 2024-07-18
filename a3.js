@@ -158,20 +158,39 @@ function updateScores() {
     tiesScoreElement.innerHTML = `TIES: ${playerScores['TIES']}`;
 }
 
+
 function updateLeaderboard() {
     fetch('game.php?action=leaderboard')
     .then(response => response.json())
     .then(data => {
-        console.log('Leaderboard:', data); // Debugging line
-        leaderboardElement.innerHTML = '<li>Rank | Player | Score</li>';
-        data.forEach((player, index) => {
-            const li = document.createElement('li');
-            li.textContent = `${index + 1} | ${playerNames[player.name]} | ${playerBoardScores[player.name]}`;
-            leaderboardElement.appendChild(li);
+        // Use data to get player names or any additional info if necessary
+        // Assuming data might contain player names or IDs
+        const scoresArray = data.map(player => {
+            return {
+                name: player.name, // Assuming 'name' is the key for player names/IDs
+                score: playerBoardScores[player.name] // Use scores from playerBoardScores
+            };
+        });
+
+        // Sort the array based on scores from playerBoardScores
+        scoresArray.sort((a, b) => b.score - a.score);
+
+        const leaderboardBody = document.querySelector('#leaderboard tbody');
+        leaderboardBody.innerHTML = ''; // Clear existing rows
+
+        scoresArray.forEach((player, index) => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${index + 1}</td>
+                <td>${playerNames[player.name]}</td>
+                <td>${player.score}</td>
+            `;
+            leaderboardBody.appendChild(row);
         });
     })
     .catch(error => console.error('Error:', error));
 }
+
 
 function editName(player) {
     const input = document.getElementById(`player${player}Name`);

@@ -1,6 +1,3 @@
-<?php
-require_once ('./_config.php');
-?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -12,18 +9,18 @@ require_once ('./_config.php');
 <body>
     <header>
         <h1>Tic Tac Toe</h1>
-        <img src="./image/tictactoe.jpg" alt="a logo">
+        <img src="./image/tictactoe.jpg" alt="Tic Tac Toe Logo">
     </header>
 
     <div class="game-container">
         <div class="player-info">
             <div>
-                <label for="playerXName" id="playerDefault">Player X: </label>
+                <label for="playerXName">Player X: </label>
                 <input type="text" id="playerXName" value="Player X" readonly>
                 <button id="playerXButton" onclick="editName('X')">Edit</button>
             </div>
             <div>
-                <label for="playerOName" id="playerDefault">Player O: </label>
+                <label for="playerOName">Player O: </label>
                 <input type="text" id="playerOName" value="Player O" readonly>
                 <button id="playerOButton" onclick="editName('O')">Edit</button>
             </div>
@@ -43,6 +40,7 @@ require_once ('./_config.php');
 
         <div class="game-info">
             <p class="status"></p>
+            <p>If you want to restart the game, please click the reset button.</p>
             <div class="button-container">
                 <button id="resetButton">Reset</button>
                 <button id="continueButton" style="display: none;">Continue</button>

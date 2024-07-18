@@ -81,9 +81,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     exit;
 }
 
+
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action']) && $_GET['action'] === 'leaderboard') {
     $leaderboard = array_count_values($_SESSION['leaderboard']);
-    arsort($leaderboard);
+    arsort($leaderboard); // Sort the leaderboard in descending order by score
     $leaderboardArray = [];
     foreach ($leaderboard as $player => $score) {
         $leaderboardArray[] = [
@@ -94,4 +95,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action']) && $_GET['act
     echo json_encode($leaderboardArray);
     exit;
 }
+
 ?>
