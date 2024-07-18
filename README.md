@@ -19,3 +19,21 @@ This is a web-based Tic Tac Toe game that allows two players to compete against 
 ### Leaderboard
 ![Leaderboard](./A3_screenshot/LeaderBoard.png)
 The leaderboard shows the ranking of players based on their scores.
+
+
+### Name Edit
+![Name Edit](./A3_screenshot/nameEdit.png)
+Players can edit their names by clicking the "Edit" button next to their name.
+
+### Game Status - Player Wins
+![Winner](./A3_screenshot/winner.png)
+When a player wins, a message is displayed indicating the winner.
+
+### Game Status - Draw
+![Tie Game](./A3_screenshot/tieGame.png)
+If the game ends in a draw, a message is displayed indicating the draw.
+
+### Player stats 
+![Stats](./A3_screenshot/status.png)
+the stats of each player
+
