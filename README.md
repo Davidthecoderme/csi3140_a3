@@ -16,6 +16,12 @@ This is a web-based Tic Tac Toe game that allows two players to compete against 
 3. **Win or Draw**: The game ends when a player wins or all cells are filled, resulting in a draw.
 4. **Continue or Reset**: After the game ends, players can choose to continue or reset the game.
 
+
+## Procedure to Start the Game
+1. **Clone the Repository**: Clone the repository to your local machine.
+2. Start a Local Server: Start a local server to serve the files. eg: php -S localhost:8000.
+
+
 ### Leaderboard
 ![Leaderboard](./A3_screenshot/LeaderBoard.png)
 The leaderboard shows the ranking of players based on their scores.
