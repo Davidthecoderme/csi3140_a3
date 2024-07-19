@@ -1,99 +1,142 @@
 <?php
+session_start();
 
-
-require_once ('./_config.php');
-
-// Initialize game state and leaderboard if not already set
-if (!isset($_SESSION['gameActive'])) {
-    $_SESSION['gameState'] = ['', '', '', '', '', '', '', '', ''];
+function initializeGame() {
+    $_SESSION['gameState'] = array_fill(0, 9, '');
     $_SESSION['currentPlayer'] = 'X';
-    $_SESSION['gameActive'] = true;
-    $_SESSION['leaderboard'] = [];
+    $_SESSION['playerScores'] = ['X' => 0, 'O' => 0, 'TIES' => 0];
+    $_SESSION['playerBoardScores'] = ['X' => 0, 'O' => 0];
 }
 
-function checkWinner($gameState) {
-    $winningConditions = [
+if (!isset($_SESSION['gameState'])) {
+    initializeGame();
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $action = $_POST['action'];
+
+    switch ($action) {
+        case 'move':
+            handleMove($_POST['index']);
+            break;
+        case 'reset':
+            resetGame();
+            break;
+        case 'continue':
+            continueGame();
+            break;
+        case 'updateName':
+            updatePlayerName($_POST['player'], $_POST['name']);
+            break;
+        default:
+            break;
+    }
+} elseif ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action'])) {
+    if ($_GET['action'] === 'leaderboard') {
+        getLeaderboard();
+    }
+}
+
+function handleMove($index) {
+    $index = (int)$index;
+
+    if ($_SESSION['gameState'][$index] !== '' || $index < 0 || $index > 8) {
+        echo json_encode(['status' => 'invalid']);
+        exit;
+    }
+
+    $_SESSION['gameState'][$index] = $_SESSION['currentPlayer'];
+
+    if (checkWin($_SESSION['currentPlayer'])) {
+        $_SESSION['playerScores'][$_SESSION['currentPlayer']]++;
+        if ($_SESSION['currentPlayer'] === 'X') {
+            $_SESSION['playerBoardScores']['X'] += 3;
+            $_SESSION['playerBoardScores']['O'] = max(0, $_SESSION['playerBoardScores']['O'] - 1);
+        } else {
+            $_SESSION['playerBoardScores']['O'] += 3;
+            $_SESSION['playerBoardScores']['X'] = max(0, $_SESSION['playerBoardScores']['X'] - 1);
+        }
+        echo json_encode([
+            'status' => 'win',
+            'winner' => $_SESSION['currentPlayer'],
+            'scores' => $_SESSION['playerScores'],
+            'leaderboard' => getLeaderboardData()
+        ]);
+        exit;
+    }
+
+    if (checkDraw()) {
+        $_SESSION['playerScores']['TIES']++;
+        $_SESSION['playerBoardScores'][$_SESSION['currentPlayer']]++;
+        echo json_encode([
+            'status' => 'draw',
+            'scores' => $_SESSION['playerScores'],
+            'leaderboard' => getLeaderboardData()
+        ]);
+        exit;
+    }
+
+    $_SESSION['currentPlayer'] = $_SESSION['currentPlayer'] === 'X' ? 'O' : 'X';
+    echo json_encode([
+        'status' => 'continue',
+        'currentPlayer' => $_SESSION['currentPlayer']
+    ]);
+}
+
+function checkWin($player) {
+    $winningCombinations = [
         [0, 1, 2],
         [3, 4, 5],
-        [6, 7, 8],  
+        [6, 7, 8],
         [0, 3, 6],
         [1, 4, 7],
         [2, 5, 8],
         [0, 4, 8],
         [2, 4, 6]
     ];
-    foreach ($winningConditions as $condition) {
-        list($a, $b, $c) = $condition;
-        if ($gameState[$a] !== '' && $gameState[$a] === $gameState[$b] && $gameState[$a] === $gameState[$c]) {
+
+    foreach ($winningCombinations as $combination) {
+        if ($_SESSION['gameState'][$combination[0]] === $player &&
+            $_SESSION['gameState'][$combination[1]] === $player &&
+            $_SESSION['gameState'][$combination[2]] === $player) {
             return true;
         }
     }
+
     return false;
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
-    $action = $_POST['action'];
-
-    if ($action === 'move') {
-        $index = intval($_POST['index']);
-        if ($_SESSION['gameActive'] && $_SESSION['gameState'][$index] === '') {
-            $_SESSION['gameState'][$index] = $_SESSION['currentPlayer'];
-            if (checkWinner($_SESSION['gameState'])) {
-                $_SESSION['gameActive'] = false;
-                $_SESSION['leaderboard'][] = $_SESSION['currentPlayer'];
-                $_SESSION['leaderboard'] = array_slice($_SESSION['leaderboard'], -10); // Keep only top 10
-                $response = [
-                    'status' => 'win',
-                    'player' => $_SESSION['currentPlayer']
-                ];
-            } else if (!in_array('', $_SESSION['gameState'])) {
-                $_SESSION['gameActive'] = false;
-                $response = [
-                    'status' => 'draw',
-                    'player' => $_SESSION['currentPlayer']
-                ];
-            } else {
-                $_SESSION['currentPlayer'] = $_SESSION['currentPlayer'] === 'X' ? 'O' : 'X';
-                $response = [
-                    'status' => 'continue',
-                    'currentPlayer' => $_SESSION['currentPlayer']
-                ];
-            }
-        } else {
-            $response = ['status' => 'invalid'];
-        }
-    } else if ($action === 'reset') {
-        $_SESSION['gameState'] = ['', '', '', '', '', '', '', '', ''];
-        $_SESSION['currentPlayer'] = 'X';
-        $_SESSION['gameActive'] = true;
-        $response = ['status' => 'reset'];
-    } else if ($action === 'continue') {
-        $_SESSION['gameState'] = ['', '', '', '', '', '', '', '', ''];
-        $_SESSION['currentPlayer'] = $_SESSION['currentPlayer'] === 'X' ? 'O' : 'X'; // Switch starting player
-        $_SESSION['gameActive'] = true;
-        $response = [
-            'status' => 'continue',
-            'currentPlayer' => $_SESSION['currentPlayer']
-        ];
-    }
-
-    echo json_encode($response);
-    exit;
+function checkDraw() {
+    return !in_array('', $_SESSION['gameState'], true);
 }
 
-
-if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action']) && $_GET['action'] === 'leaderboard') {
-    $leaderboard = array_count_values($_SESSION['leaderboard']);
-    arsort($leaderboard); // Sort the leaderboard in descending order by score
-    $leaderboardArray = [];
-    foreach ($leaderboard as $player => $score) {
-        $leaderboardArray[] = [
-            'name' => $player,
-            'score' => $score
-        ];
-    }
-    echo json_encode($leaderboardArray);
-    exit;
+function resetGame() {
+    initializeGame();
+    echo json_encode(['status' => 'reset', 'currentPlayer' => $_SESSION['currentPlayer']]);
 }
 
+function continueGame() {
+    $_SESSION['gameState'] = array_fill(0, 9, '');
+    echo json_encode(['status' => 'continue', 'currentPlayer' => $_SESSION['currentPlayer']]);
+}
+
+function updatePlayerName($player, $name) {
+    $_SESSION['playerNames'][$player] = $name;
+    echo json_encode(['status' => 'success', 'currentPlayer' => $_SESSION['currentPlayer']]);
+}
+
+function getLeaderboard() {
+    echo json_encode(getLeaderboardData());
+}
+
+function getLeaderboardData() {
+    $leaderboard = [
+        ['name' => 'X', 'score' => $_SESSION['playerBoardScores']['X']],
+        ['name' => 'O', 'score' => $_SESSION['playerBoardScores']['O']]
+    ];
+    usort($leaderboard, function($a, $b) {
+        return $b['score'] <=> $a['score'];
+    });
+    return $leaderboard;
+}
 ?>

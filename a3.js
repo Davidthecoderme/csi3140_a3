@@ -6,24 +6,7 @@ const playerOScoreElement = document.getElementById('playerOScore');
 const tiesScoreElement = document.getElementById('tiesScore');
 const leaderboardElement = document.getElementById('leaderboard');
 const continueButton = document.getElementById('continueButton'); // Continue button
-var index;
 let gameActive = true; // Flag to track if the game is active
-let currentPlayer = 'X';
-let playerNames = {
-    'X': 'Player X',
-    'O': 'Player O'
-};
-
-let playerScores = {
-    'X': 0,
-    'O': 0,
-    'TIES': 0
-};
-
-let playerBoardScores = {
-    'X': 0,
-    'O': 0,
-};
 
 function handleClick(event) {
     if (!gameActive) return; // Prevent clicking if the game is not active
@@ -36,9 +19,7 @@ function handleClick(event) {
         return;
     }
 
-     index = clickedCell.dataset.index;
-
-    console.log('Cell clicked:', index); // Debugging line
+    const index = clickedCell.dataset.index;
 
     fetch('game.php', {
         method: 'POST',
@@ -55,61 +36,25 @@ function handleClick(event) {
         console.log('Response from server:', data); // Debugging line
 
         if (data.status === 'win') {
-            
-            statusText.textContent = `${playerNames[currentPlayer]} wins!`;
-            //
-            playerScores[currentPlayer]++;
-
-            if (currentPlayer === 'X') {
-                playerBoardScores['X'] += 3;
-                if (playerBoardScores['O'] <= 0) {
-                    playerBoardScores['O'] = 0;
-                } else {
-                    playerBoardScores['O']--;
-                }
-            } else { 
-                playerBoardScores['O'] += 3;
-                if (playerBoardScores['X'] <= 0) {
-                    playerBoardScores['X'] = 0;
-                } else {
-                    playerBoardScores['X']--;
-                }
-            }
-            console.log("current player is " + currentPlayer);
-
-            console.log("current data player is " + data.currentPlayer);
-
+            statusText.textContent = `${data.winner} wins!`;
             gameActive = false; // Set gameActive to false to disable further clicks
-            updateScores();
-            
-            //currentPlayer = data.currentPlayer;
-            updateLeaderboard();
+            updateScores(data.scores);
+            updateLeaderboard(data.leaderboard);
             continueButton.style.display = 'block';
-            
-            
         } else if (data.status === 'draw') {
             gameActive = false; // Set gameActive to false to disable further clicks
             statusText.textContent = 'It\'s a draw!';
-            playerScores['TIES']++;
-            playerBoardScores[currentPlayer] += 1;
-            updateScores();
+            updateScores(data.scores);
             continueButton.style.display = 'block';
-            
-
         } else if (data.status === 'continue') {
-            currentPlayer = data.currentPlayer;
-            statusText.textContent = `Player ${playerNames[currentPlayer]}'s turn`;
-            
+            statusText.textContent = `Player ${data.currentPlayer}'s turn`;
+            updateBoard(index, data.currentPlayer);
         }
-        
-        updateBoard(index,currentPlayer);
     })
     .catch(error => {
         console.error('Error:', error);
-        // Optionally, update the UI to indicate an error
     });
 }
-
 
 function resetGame() {
     fetch('game.php', {
@@ -119,31 +64,24 @@ function resetGame() {
     })
     .then(response => response.json())
     .then(data => {
-        console.log('Response from server:', data); // Debugging line
         if (data.status === 'reset') {
             updateBoard();
-            statusText.textContent = `Player ${playerNames[currentPlayer]}'s turn`;
+            statusText.textContent = `Player ${data.currentPlayer}'s turn`;
             gameActive = true;
             continueButton.style.display = 'none'; // Hide continue button
         }
     })
-        .catch(error => console.error('Error:', error));
+    .catch(error => console.error('Error:', error));
     location.reload();
 }
 
 function updateBoard(index, currentPlayer) {
-    let box = document.getElementById(index);
-    if (gameActive === false) { 
-        return box.innerHTML = currentPlayer;
+    const box = document.getElementById(index);
+    if (gameActive === false) {
+        box.innerHTML = currentPlayer;
+    } else {
+        box.innerHTML = currentPlayer === 'X' ? 'O' : 'X';
     }
-
-    if (currentPlayer === 'X') {
-        box.innerHTML= 'O';
-    } else { 
-        box.innerHTML = 'X';
-
-    }
-    
 }
 
 function updateNewBoard() {
@@ -152,45 +90,26 @@ function updateNewBoard() {
     });
 }
 
-function updateScores() {
-    playerXScoreElement.innerHTML = `${playerNames['X']}: ${playerScores['X']}`;
-    playerOScoreElement.innerHTML = `${playerNames['O']}: ${playerScores['O']}`;
-    tiesScoreElement.innerHTML = `TIES: ${playerScores['TIES']}`;
+function updateScores(scores) {
+    playerXScoreElement.innerHTML = `Player X: ${scores.X}`;
+    playerOScoreElement.innerHTML = `Player O: ${scores.O}`;
+    tiesScoreElement.innerHTML = `TIES: ${scores.TIES}`;
 }
 
+function updateLeaderboard(leaderboard) {
+    const leaderboardBody = document.querySelector('#leaderboard tbody');
+    leaderboardBody.innerHTML = ''; // Clear existing rows
 
-function updateLeaderboard() {
-    fetch('game.php?action=leaderboard')
-    .then(response => response.json())
-    .then(data => {
-        // Use data to get player names or any additional info if necessary
-        // Assuming data might contain player names or IDs
-        const scoresArray = data.map(player => {
-            return {
-                name: player.name, // Assuming 'name' is the key for player names/IDs
-                score: playerBoardScores[player.name] // Use scores from playerBoardScores
-            };
-        });
-
-        // Sort the array based on scores from playerBoardScores
-        scoresArray.sort((a, b) => b.score - a.score);
-
-        const leaderboardBody = document.querySelector('#leaderboard tbody');
-        leaderboardBody.innerHTML = ''; // Clear existing rows
-
-        scoresArray.forEach((player, index) => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${index + 1}</td>
-                <td>${playerNames[player.name]}</td>
-                <td>${player.score}</td>
-            `;
-            leaderboardBody.appendChild(row);
-        });
-    })
-    .catch(error => console.error('Error:', error));
+    leaderboard.forEach((player, index) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${index + 1}</td>
+            <td>${player.name}</td>
+            <td>${player.score}</td>
+        `;
+        leaderboardBody.appendChild(row);
+    });
 }
-
 
 function editName(player) {
     const input = document.getElementById(`player${player}Name`);
@@ -204,8 +123,18 @@ function editName(player) {
     } else {
         input.readOnly = true;
         button.textContent = 'Edit';
-        playerNames[player] = input.value;
-        statusText.textContent = `${playerNames[currentPlayer]}'s turn (${currentPlayer})`;
+        fetch('game.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `action=updateName&player=${player}&name=${input.value}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                statusText.textContent = `${data.currentPlayer}'s turn (${data.currentPlayer})`;
+            }
+        })
+        .catch(error => console.error('Error:', error));
     }
 }
 
@@ -218,20 +147,17 @@ function continueGame() {
     .then(response => response.json())
     .then(data => {
         if (data.status === 'continue') {
-            currentPlayer = data.currentPlayer;
             gameActive = true;
             updateNewBoard();
-            statusText.textContent = `${playerNames[currentPlayer]}'s turn`;
+            statusText.textContent = `${data.currentPlayer}'s turn`;
             continueButton.style.display = 'none'; // Hide continue button
         }
     })
     .catch(error => console.error('Error:', error));
 }
 
- cells.forEach(cell => cell.addEventListener('click', handleClick));
+cells.forEach(cell => cell.addEventListener('click', handleClick));
 resetButton.addEventListener('click', resetGame);
 continueButton.addEventListener('click', continueGame);
 
-// Call updateLeaderboard on page load and after each game update
-//updateLeaderboard();
-statusText.textContent = `Player ${currentPlayer}'s turn`;
+statusText.textContent = `Player's turn`;
